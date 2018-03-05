@@ -1,0 +1,11 @@
+C:\Users\11235\Documents\c#\import_excel\import_excel\bin\Debug\import_excel.exe
+C:\Users\11235\Documents\c#\import_excel\import_excel\bin\Debug\import_excel.pdb
+C:\Users\11235\Documents\c#\import_excel\import_excel\obj\Debug\import_excel.csprojResolveAssemblyReference.cache
+C:\Users\11235\Documents\c#\import_excel\import_excel\obj\Debug\import_excel.csproj.ResolveComReference.cache
+C:\Users\11235\Documents\c#\import_excel\import_excel\obj\Debug\import_excel.Form1.resources
+C:\Users\11235\Documents\c#\import_excel\import_excel\obj\Debug\import_excel.Form2.resources
+C:\Users\11235\Documents\c#\import_excel\import_excel\obj\Debug\import_excel.Properties.Resources.resources
+C:\Users\11235\Documents\c#\import_excel\import_excel\obj\Debug\import_excel.csproj.GenerateResource.Cache
+C:\Users\11235\Documents\c#\import_excel\import_excel\obj\Debug\import_excel.csproj.CoreCompileInputs.cache
+C:\Users\11235\Documents\c#\import_excel\import_excel\obj\Debug\import_excel.exe
+C:\Users\11235\Documents\c#\import_excel\import_excel\obj\Debug\import_excel.pdb
