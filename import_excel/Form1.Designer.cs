@@ -1,6 +1,4 @@
-﻿using System.Data.SqlClient;
-
-namespace import_excel
+﻿namespace import_excel
 {
     partial class Form1
     {

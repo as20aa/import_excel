@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
-using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
@@ -24,14 +20,18 @@ namespace import_excel
         private void Form1_Load(object sender, EventArgs e)
         {
             //窗口加载之后执行的代码
+            //这段代码可以实现打开程序必须先进入登陆界面，然后才能进行数据导入这个功能
             data = new appdatas();
             Form2 loginw = new Form2();
             if (loginw.ShowDialog() != DialogResult.OK)
             {
+                //当取消登陆时，整个程序将会退出
                 this.Close();
             }
             label2.Text = "已连接数据库";
         }
+
+        //选择目标文件
         private void filedialog(object sender,EventArgs e)
         {
             OpenFileDialog file = new OpenFileDialog();
@@ -45,6 +45,8 @@ namespace import_excel
                 //MessageBox.Show("已选择文件:" + path, "选择文件提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
+
+        //将数据导入到datatable中，此处使用的是excel的com组件
         private void itdatatable(object sender,EventArgs e)
         {
             //用excel com打开目标文件
@@ -136,10 +138,13 @@ namespace import_excel
             xlApp.Quit();
             Marshal.ReleaseComObject(xlApp);
         }
+
+        //将数据从datatable导入到SQL Server上，并且对数据库、表格、记录进行检查
         private void itsql(object sender, EventArgs e)
         {
             try
             {
+                //连接数据库
                 using (data.connection = new SqlConnection(data.builder.ConnectionString))
                 {
                     //登陆成功
@@ -150,7 +155,6 @@ namespace import_excel
                     using (SqlCommand command = new SqlCommand(sql, data.connection))
                     {
                         command.ExecuteNonQuery();
-                        //Console.WriteLine("Database check and creation is done.");
                     }
                     StringBuilder sb = new StringBuilder();
                     sb.Append("use list;");
@@ -196,28 +200,27 @@ namespace import_excel
                         //Console.WriteLine("Table creation is done.");
                     }
 
-                    //从datatable的每一行开始筛选，对重复自定义码数据进行操作
-
+                    //从datatable的每一行开始筛选，对记录进行查重
                     foreach (DataRow row2 in data.datatable.Rows)
                     {
                         StringBuilder jd = new StringBuilder();
-                        //如果用select语句，则如果不存在该行则会直接退出程序
+                        //向SQL Server发出查询指令，并根据返回数据判断是否存在重复记录
                         jd.Append("select * from datatable where ");
                         jd.Append(data.datatable.Columns[0].ColumnName);
                         jd.Append(" = ");
                         jd.Append(row2[data.datatable.Columns[0].ColumnName]);
                         jd.Append(";");
                         sql = jd.ToString();
-                        //Console.WriteLine(sql);
                         DataSet dataset = new DataSet();
+                        //SqlDataAdapter类的用法，接收到的数据是DataSet或者是DataTable类型
                         SqlDataAdapter adapter = new SqlDataAdapter(sql, data.connection);
 
+                        //将接收到的数据填充到dataset中
                         adapter.Fill(dataset);
-                        //采用以下的方式才是正确的读取方式
+                        //采用以下的方式才是正确的对datatable和dataset单元数据的读取方式
                         //MessageBox.Show(temp.Rows[0][0].ToString());
                         //MessageBox.Show(dataset.Tables[0].Rows[0][0].ToString());
                         //adapter.SelectCommand = new SqlCommand(sql, data.connection);
-                        //此处的判断条件不好！如果找不到数据selectcommand不为空
                         //使用dataset中表的行数判断查询结果是否为空
                         if (dataset.Tables[0].Rows.Count > 0)
                         {
@@ -225,6 +228,8 @@ namespace import_excel
                             //一旦dataset为空，则下面的判断语句就会出错！
                             if (row2[0].ToString() == dataset.Tables[0].Rows[0][0].ToString())
                             {
+                                //弹出信息框，对信息框方法的描述见定义
+                                //注意添加的按钮属性是okcancel而不是yesno
                                 DialogResult dr = MessageBox.Show("表格重复！是否更新该列表？", "警告", MessageBoxButtons.OKCancel);
                                 if (dr == DialogResult.OK)
                                 {
@@ -239,19 +244,21 @@ namespace import_excel
                                     using (SqlCommand command2 = new SqlCommand(sql, data.connection))
                                     {
                                         command2.ExecuteNonQuery();
-                                        //Console.WriteLine("Delete completed");
                                         using (SqlBulkCopy bulkCopy = new SqlBulkCopy(data.connection))
                                         {
                                             bulkCopy.DestinationTableName = "dbo.datatable";
                                             // Write from the source to the destination.
                                             try
                                             {
+                                                //从当前的datatable中克隆到新的datatable中，克隆得到的datatable具有原来
+                                                //datatable的架构，但是没有数据，即只有列，没有行数据
                                                 DataTable buff = data.datatable.Clone();
-                                                //此处添加行出了问题,不能用buff.rows.add(row2),程序会直接出错，可以中buff.importrow(row2)来实现导入一行
+                                                //不能用buff.rows.add(row2),程序会直接出错，可以中buff.importrow(row2)来实现导入一行
                                                 buff.ImportRow(row2);
                                                 // Write from the source to the destination.
                                                 bulkCopy.WriteToServer(buff);
-                                                buff.Rows.Remove(row2);
+                                                //由于buff是局部变量，在每次调用之后会被自动清除故可以不用移除操作
+                                                //buff.Rows.Remove(row2);
                                             }
                                             catch (Exception ex)
                                             {
@@ -264,17 +271,18 @@ namespace import_excel
                         }
                         else
                         {
+                            //当不存在重复行数据时
                             using (SqlBulkCopy bulkCopy = new SqlBulkCopy(data.connection))
                             {
                                 bulkCopy.DestinationTableName = "dbo.datatable";
                                 try
                                 {
                                     DataTable buff = data.datatable.Clone();
-                                    //此处添加行出了问题,不能用buff.rows.add(row2),程序会直接出错，可以中buff.importrow(row2)来实现导入一行
+                                    //不能用buff.rows.add(row2),程序会直接出错，可以中buff.importrow(row2)来实现导入一行
                                     buff.ImportRow(row2);
                                     // Write from the source to the destination.
                                     bulkCopy.WriteToServer(buff);
-                                    buff.Rows.Remove(row2);
+                                    //buff.Rows.Remove(row2);
                                 }
                                 catch (Exception ex)
                                 {
@@ -284,7 +292,6 @@ namespace import_excel
                         }
 
                     }
-                    //Console.WriteLine("Done.");
                 }
             }
             catch

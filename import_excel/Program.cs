@@ -15,6 +15,7 @@ namespace import_excel
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            //决定哪个源文件才是启动项
             Application.Run(new Form1());
         }
     }

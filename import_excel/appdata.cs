@@ -1,14 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Windows.Forms;
-using Excel = Microsoft.Office.Interop.Excel;
-using System.Runtime.InteropServices;
-using System.Data.SqlClient;
+﻿using System.Data.SqlClient;
 
 /// <summary>
 /// Summary description for Class1
