@@ -84,6 +84,7 @@
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(100, 21);
             this.textBox1.TabIndex = 4;
+            this.textBox1.Text = "DESKTOP-OA6B8Q0";
             // 
             // textBox2
             // 
@@ -91,6 +92,7 @@
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(100, 21);
             this.textBox2.TabIndex = 5;
+            this.textBox2.Text = "sa";
             // 
             // textBox4
             // 
@@ -98,6 +100,7 @@
             this.textBox4.Name = "textBox4";
             this.textBox4.Size = new System.Drawing.Size(100, 21);
             this.textBox4.TabIndex = 7;
+            this.textBox4.Text = "master";
             // 
             // login
             // 

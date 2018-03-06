@@ -28,7 +28,8 @@ namespace import_excel
                 //当取消登陆时，整个程序将会退出
                 this.Close();
             }
-            label2.Text = "已连接数据库";
+            if(data.connection.State==ConnectionState.Open)
+                label2.Text = "已连接数据库";
         }
 
         //选择目标文件
@@ -59,6 +60,7 @@ namespace import_excel
             int colCount = xlRange.Columns.Count;
 
             data.datatable = new DataTable("datatable");
+
             //data.dtt=new DataTable("dtt");
             //添加列
             DataColumn column;
@@ -113,9 +115,10 @@ namespace import_excel
                     }
                 }
                 data.datatable.Rows.Add(row);
+
             }
 
-            //在datagridview中显示数据
+            //在datagridview中显示数据，设置数据源之后界面会自动刷新
             this.dataGridView1.DataSource = data.datatable;
 
             //cleanup
@@ -142,166 +145,184 @@ namespace import_excel
         //将数据从datatable导入到SQL Server上，并且对数据库、表格、记录进行检查
         private void itsql(object sender, EventArgs e)
         {
-            try
-            {
-                //连接数据库
-                using (data.connection = new SqlConnection(data.builder.ConnectionString))
-                {
-                    //登陆成功
-                    data.connection.Open();
-                    //导入到SQL Server
-                    //检查数据库
-                    string sql = "if not exists (select * from sys.databases where name = 'list') create database [list];";
-                    using (SqlCommand command = new SqlCommand(sql, data.connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-                    StringBuilder sb = new StringBuilder();
-                    sb.Append("use list;");
-                    sb.Append("if not exists (select * from sysobjects where name='datatable' and xtype='U') create table datatable (");
+            //将连接的任务交给import
+            import ipf = new import();
+            ipf.Show();
+            //try
+            //{
+            //    //连接数据库
+            //    using (data.connection = new SqlConnection(data.builder.ConnectionString))
+            //    {
+            //        //登陆成功
+            //        data.connection.Open();
 
-                    //添加列信息
-                    foreach (DataColumn columns in data.datatable.Columns)
-                    {
-                        sb.Append(" ");
-                        //插入的数据的列名称
-                        sb.Append(columns.ColumnName.ToString());
-                        sb.Append(" ");
-                        //插入列的数据类型
-                        if (columns.DataType == System.Type.GetType("System.String"))
-                            sb.Append("nvarchar(50)");
-                        if (columns.DataType == System.Type.GetType("System.Int64"))
-                            sb.Append("bigint");
-                        else
-                        {
-                            if (columns.DataType == System.Type.GetType("System.Int32"))
-                                sb.Append("int");
-                            else
-                            {
-                                if (columns.DataType == System.Type.GetType("System.Int16"))
-                                    sb.Append("smallint");
-                                else
-                                    if (columns.DataType == System.Type.GetType("System.Double"))
-                                    sb.Append("real");
-                            }
-                        }
-                        if (columns.DataType == System.Type.GetType("System.DateTime"))
-                            sb.Append("datetime");
-                        sb.Append(",");
-                    }
-                    //移除最后一个','
-                    sb = sb.Remove(sb.Length - 1, 1);
-                    sb.Append(");");
-                    sql = sb.ToString();
-                    //创建SQL数据库操作
-                    using (SqlCommand command = new SqlCommand(sql, data.connection))
-                    {
-                        command.ExecuteNonQuery();
-                        //Console.WriteLine("Table creation is done.");
-                    }
+            //        //打开导入界面
+            //        import ipf= new import();
+            //        ipf.Show();
 
-                    //从datatable的每一行开始筛选，对记录进行查重
-                    foreach (DataRow row2 in data.datatable.Rows)
-                    {
-                        StringBuilder jd = new StringBuilder();
-                        //向SQL Server发出查询指令，并根据返回数据判断是否存在重复记录
-                        jd.Append("select * from datatable where ");
-                        jd.Append(data.datatable.Columns[0].ColumnName);
-                        jd.Append(" = ");
-                        jd.Append(row2[data.datatable.Columns[0].ColumnName]);
-                        jd.Append(";");
-                        sql = jd.ToString();
-                        DataSet dataset = new DataSet();
-                        //SqlDataAdapter类的用法，接收到的数据是DataSet或者是DataTable类型
-                        SqlDataAdapter adapter = new SqlDataAdapter(sql, data.connection);
+            ////测试能够从与SQL Server的连接中获取数据库列表
+            //StringBuilder getlist = new StringBuilder();
+            //getlist.Append("SELECT Name FROM " + data.builder.InitialCatalog + "..SysDatabases ORDER BY Name");
+            //DataTable databaselist = new DataTable();
+            //SqlDataAdapter list = new SqlDataAdapter(getlist.ToString(), data.connection);
+            //list.Fill(databaselist);
+            //if (databaselist.Rows.Count > 0)
+            //{
+            //    MessageBox.Show("数据库非空");
+            //}
+            ////导入到SQL Server
+            ////检查数据库
+            //string sql = "if not exists (select * from sys.databases where name = 'list') create database [list];";
+            //using (SqlCommand command = new SqlCommand(sql, data.connection))
+            //{
+            //    command.ExecuteNonQuery();
+            //}
+            //StringBuilder sb = new StringBuilder();
+            //sb.Append("use list;");
+            //sb.Append("if not exists (select * from sysobjects where name='datatable' and xtype='U') create table datatable (");
 
-                        //将接收到的数据填充到dataset中
-                        adapter.Fill(dataset);
-                        //采用以下的方式才是正确的对datatable和dataset单元数据的读取方式
-                        //MessageBox.Show(temp.Rows[0][0].ToString());
-                        //MessageBox.Show(dataset.Tables[0].Rows[0][0].ToString());
-                        //adapter.SelectCommand = new SqlCommand(sql, data.connection);
-                        //使用dataset中表的行数判断查询结果是否为空
-                        if (dataset.Tables[0].Rows.Count > 0)
-                        {
+            ////添加列信息
+            //foreach (DataColumn columns in data.datatable.Columns)
+            //{
+            //    sb.Append(" ");
+            //    //插入的数据的列名称
+            //    sb.Append(columns.ColumnName.ToString());
+            //    sb.Append(" ");
+            //    //插入列的数据类型
+            //    if (columns.DataType == System.Type.GetType("System.String"))
+            //        sb.Append("nvarchar(50)");
+            //    if (columns.DataType == System.Type.GetType("System.Int64"))
+            //        sb.Append("bigint");
+            //    else
+            //    {
+            //        if (columns.DataType == System.Type.GetType("System.Int32"))
+            //            sb.Append("int");
+            //        else
+            //        {
+            //            if (columns.DataType == System.Type.GetType("System.Int16"))
+            //                sb.Append("smallint");
+            //            else
+            //                if (columns.DataType == System.Type.GetType("System.Double"))
+            //                sb.Append("real");
+            //        }
+            //    }
+            //    if (columns.DataType == System.Type.GetType("System.DateTime"))
+            //        sb.Append("datetime");
+            //    sb.Append(",");
+            //}
+            ////移除最后一个','
+            //sb = sb.Remove(sb.Length - 1, 1);
+            //sb.Append(");");
+            //sql = sb.ToString();
+            ////创建SQL数据库操作
+            //using (SqlCommand command = new SqlCommand(sql, data.connection))
+            //{
+            //    command.ExecuteNonQuery();
+            //    //Console.WriteLine("Table creation is done.");
+            //}
 
-                            //一旦dataset为空，则下面的判断语句就会出错！
-                            if (row2[0].ToString() == dataset.Tables[0].Rows[0][0].ToString())
-                            {
-                                //弹出信息框，对信息框方法的描述见定义
-                                //注意添加的按钮属性是okcancel而不是yesno
-                                DialogResult dr = MessageBox.Show("表格重复！是否更新该列表？", "警告", MessageBoxButtons.OKCancel);
-                                if (dr == DialogResult.OK)
-                                {
-                                    //更新该列表
-                                    StringBuilder di = new StringBuilder();
-                                    di.Append("delete from datatable where ");
-                                    di.Append(data.datatable.Columns[0].ColumnName);
-                                    di.Append(" = ");
-                                    di.Append(row2[data.datatable.Columns[0]].ToString());
-                                    di.Append(";");
-                                    sql = di.ToString();
-                                    using (SqlCommand command2 = new SqlCommand(sql, data.connection))
-                                    {
-                                        command2.ExecuteNonQuery();
-                                        using (SqlBulkCopy bulkCopy = new SqlBulkCopy(data.connection))
-                                        {
-                                            bulkCopy.DestinationTableName = "dbo.datatable";
-                                            // Write from the source to the destination.
-                                            try
-                                            {
-                                                //从当前的datatable中克隆到新的datatable中，克隆得到的datatable具有原来
-                                                //datatable的架构，但是没有数据，即只有列，没有行数据
-                                                DataTable buff = data.datatable.Clone();
-                                                //不能用buff.rows.add(row2),程序会直接出错，可以中buff.importrow(row2)来实现导入一行
-                                                buff.ImportRow(row2);
-                                                // Write from the source to the destination.
-                                                bulkCopy.WriteToServer(buff);
-                                                //由于buff是局部变量，在每次调用之后会被自动清除故可以不用移除操作
-                                                //buff.Rows.Remove(row2);
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                Console.WriteLine(ex.Message);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            //当不存在重复行数据时
-                            using (SqlBulkCopy bulkCopy = new SqlBulkCopy(data.connection))
-                            {
-                                bulkCopy.DestinationTableName = "dbo.datatable";
-                                try
-                                {
-                                    DataTable buff = data.datatable.Clone();
-                                    //不能用buff.rows.add(row2),程序会直接出错，可以中buff.importrow(row2)来实现导入一行
-                                    buff.ImportRow(row2);
-                                    // Write from the source to the destination.
-                                    bulkCopy.WriteToServer(buff);
-                                    //buff.Rows.Remove(row2);
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine(ex.Message);
-                                }
-                            }
-                        }
+            //从datatable的每一行开始筛选，对记录进行查重
+            //foreach (DataRow row2 in data.datatable.Rows)
+            //{
+            //    StringBuilder jd = new StringBuilder();
+            //    //向SQL Server发出查询指令，并根据返回数据判断是否存在重复记录
+            //    jd.Append("select * from datatable where ");
+            //    jd.Append(data.datatable.Columns[0].ColumnName);
+            //    jd.Append(" = ");
+            //    jd.Append(row2[data.datatable.Columns[0].ColumnName]);
+            //    jd.Append(";");
+            //    sql = jd.ToString();
+            //    DataSet dataset = new DataSet();
+            //    //SqlDataAdapter类的用法，接收到的数据是DataSet或者是DataTable类型
+            //    SqlDataAdapter adapter = new SqlDataAdapter(sql, data.connection);
 
-                    }
-                }
-            }
-            catch
-            {
-                label2.Text = "数据库未连接";
-                MessageBox.Show("登陆失败！请重试" + "\r\n" + MessageBoxButtons.OK);
+            //    //将接收到的数据填充到dataset中
+            //    adapter.Fill(dataset);
+            //    //采用以下的方式才是正确的对datatable和dataset单元数据的读取方式
+            //    //MessageBox.Show(temp.Rows[0][0].ToString());
+            //    //MessageBox.Show(dataset.Tables[0].Rows[0][0].ToString());
+            //    //adapter.SelectCommand = new SqlCommand(sql, data.connection);
+            //    //使用dataset中表的行数判断查询结果是否为空
+            //    if (dataset.Tables[0].Rows.Count > 0)
+            //    {
 
-                Form2 loginw = new Form2();
-                while (loginw.ShowDialog() != DialogResult.OK) ;
-            }
+            //        //一旦dataset为空，则下面的判断语句就会出错！
+            //        if (row2[0].ToString() == dataset.Tables[0].Rows[0][0].ToString())
+            //        {
+            //            //弹出信息框，对信息框方法的描述见定义
+            //            //注意添加的按钮属性是okcancel而不是yesno
+            //            DialogResult dr = MessageBox.Show("表格重复！是否更新该列表？", "警告", MessageBoxButtons.OKCancel);
+            //            if (dr == DialogResult.OK)
+            //            {
+            //                //更新该列表
+            //                StringBuilder di = new StringBuilder();
+            //                di.Append("delete from datatable where ");
+            //                di.Append(data.datatable.Columns[0].ColumnName);
+            //                di.Append(" = ");
+            //                di.Append(row2[data.datatable.Columns[0]].ToString());
+            //                di.Append(";");
+            //                sql = di.ToString();
+            //                using (SqlCommand command2 = new SqlCommand(sql, data.connection))
+            //                {
+            //                    command2.ExecuteNonQuery();
+            //                    using (SqlBulkCopy bulkCopy = new SqlBulkCopy(data.connection))
+            //                    {
+            //                        bulkCopy.DestinationTableName = "dbo.datatable";
+            //                        // Write from the source to the destination.
+            //                        try
+            //                        {
+            //                            //从当前的datatable中克隆到新的datatable中，克隆得到的datatable具有原来
+            //                            //datatable的架构，但是没有数据，即只有列，没有行数据
+            //                            DataTable buff = data.datatable.Clone();
+            //                            //不能用buff.rows.add(row2),程序会直接出错，可以中buff.importrow(row2)来实现导入一行
+            //                            buff.ImportRow(row2);
+            //                            // Write from the source to the destination.
+            //                            bulkCopy.WriteToServer(buff);
+            //                            //由于buff是局部变量，在每次调用之后会被自动清除故可以不用移除操作
+            //                            //buff.Rows.Remove(row2);
+            //                        }
+            //                        catch (Exception ex)
+            //                        {
+            //                            Console.WriteLine(ex.Message);
+            //                        }
+            //                    }
+            //                }
+            //            }
+            //        }
+            //    }
+            //    else
+            //    {
+            //        //当不存在重复行数据时
+            //        using (SqlBulkCopy bulkCopy = new SqlBulkCopy(data.connection))
+            //        {
+            //            bulkCopy.DestinationTableName = "dbo.datatable";
+            //            try
+            //            {
+            //                DataTable buff = data.datatable.Clone();
+            //                //不能用buff.rows.add(row2),程序会直接出错，可以中buff.importrow(row2)来实现导入一行
+            //                buff.ImportRow(row2);
+            //                // Write from the source to the destination.
+            //                bulkCopy.WriteToServer(buff);
+            //                //buff.Rows.Remove(row2);
+            //            }
+            //            catch (Exception ex)
+            //            {
+            //                Console.WriteLine(ex.Message);
+            //            }
+            //        }
+            //    }
+
+            //}
+    //    }
+    //}
+    //        catch
+    //        {
+    //            label2.Text = "数据库未连接";
+    //            MessageBox.Show("登陆失败！请重试" + "\r\n" + MessageBoxButtons.OK);
+
+    //            Form2 loginw = new Form2();
+    //            while (loginw.ShowDialog() != DialogResult.OK) ;
+    //        }
         }
     }
 }

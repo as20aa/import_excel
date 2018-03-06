@@ -37,13 +37,12 @@ namespace import_excel
             //connect to sql server
             try
             {
-                using (Form1.data.connection = new SqlConnection(Form1.data.builder.ConnectionString))
-                {
-                    //登陆成功
-                    Form1.data.connection.Open();
-                    this.DialogResult = DialogResult.OK;
-                    this.Close();
-                }
+                //此处不能使用using创建form1.data.connection，也不可以在里面给form1.data.connection赋值
+                Form1.data.connection = new SqlConnection(Form1.data.builder.ConnectionString);
+                //登陆成功
+                Form1.data.connection.Open();
+                this.DialogResult = DialogResult.OK;
+                this.Close();
             }
             catch
             {
