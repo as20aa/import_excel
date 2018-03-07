@@ -50,96 +50,104 @@ namespace import_excel
         //将数据导入到datatable中，此处使用的是excel的com组件
         private void itdatatable(object sender,EventArgs e)
         {
-            //用excel com打开目标文件
-            Excel.Application xlApp = new Excel.Application();
-            Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(data.path);
-            Excel._Worksheet xlWorksheet = xlWorkbook.Sheets[1];
-            Excel.Range xlRange = xlWorksheet.UsedRange;
-
-            int rowCount = xlRange.Rows.Count;
-            int colCount = xlRange.Columns.Count;
-
-            data.datatable = new DataTable("datatable");
-
-            //data.dtt=new DataTable("dtt");
-            //添加列
-            DataColumn column;
-            for (int i = 1; i <= colCount; i++)
+            try
             {
-                if (xlRange.Cells[1, i].Value2 != null && xlRange.Cells[1, i] != null)
-                {
-                    column = new DataColumn();
-                    column.ColumnName = xlRange.Cells[1, i].Value2.ToString();
-                    if (xlRange.Cells[2, i].value != null)
-                    {
-                        //对datatime型数据要特别处理
-                        if (xlRange.Cells[2, i].value is DateTime)
-                            column.DataType = System.Type.GetType("System.DateTime");
-                        else
-                            column.DataType = xlRange.Cells[2, i].Value2.GetType();
-                    }
-                    else
-                        column.DataType = System.Type.GetType("System.String");
-                    column.ReadOnly = false;
-                    column.Unique = false;
-                    data.datatable.Columns.Add(column);
-                }
-            }
-            //此处的dtt是接收了datatable的列信息，但是两个实际上是绑定在一起了，没有
-            //data.dtt = data.datatable;
+                //用excel com打开目标文件
+                Excel.Application xlApp = new Excel.Application();
+                Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(data.path);
+                Excel._Worksheet xlWorksheet = xlWorkbook.Sheets[1];
+                Excel.Range xlRange = xlWorksheet.UsedRange;
 
-            //添加行
-            DataRow row;
-            for (int i = 2; i <= rowCount; i++)
-            {
-                row = data.datatable.NewRow();
-                for (int j = 0; j <= colCount - 1; j++)
+                int rowCount = xlRange.Rows.Count;
+                int colCount = xlRange.Columns.Count;
+
+                data.datatable = new DataTable("datatable");
+
+                //data.dtt=new DataTable("dtt");
+                //添加列
+                DataColumn column;
+                for (int i = 1; i <= colCount; i++)
                 {
-                    //cells从1开始计数
-                    if (xlRange.Cells[i, j + 1].Value2 != null)
+                    if (xlRange.Cells[1, i].Value2 != null && xlRange.Cells[1, i] != null)
                     {
-                        //datatime型数据另外处理
-                        if (xlRange.Cells[i, j + 1].value is DateTime)
+                        column = new DataColumn();
+                        column.ColumnName = xlRange.Cells[1, i].Value2.ToString();
+                        if (xlRange.Cells[2, i].value != null)
                         {
-                            string strValue = xlRange.Cells[i, j + 1].Value2.ToString(); //获取得到数字值
-                            //注意数据表中含有的日期数据精确到了小时，所以表示日期应该用double，而不是表示日的int32
-                            string strDate = DateTime.FromOADate(Convert.ToDouble(strValue)).ToString("s");
-                            ////转成sql server能接受的数据格式
-                            row[data.datatable.Columns[j].ColumnName] = strDate;
+                            //对datatime型数据要特别处理
+                            if (xlRange.Cells[2, i].value is DateTime)
+                                column.DataType = System.Type.GetType("System.DateTime");
+                            else
+                                column.DataType = xlRange.Cells[2, i].Value2.GetType();
                         }
-                        //将相应列的数据导入到datatable中，注意位置的对应关系，在column中从0开始计数
                         else
-                        {
-                            row[data.datatable.Columns[j].ColumnName] = xlRange.Cells[i, j + 1].Value2;
-                        }
+                            column.DataType = System.Type.GetType("System.String");
+                        column.ReadOnly = false;
+                        column.Unique = false;
+                        data.datatable.Columns.Add(column);
                     }
                 }
-                data.datatable.Rows.Add(row);
+                //此处的dtt是接收了datatable的列信息，但是两个实际上是绑定在一起了，没有
+                //data.dtt = data.datatable;
 
+                //添加行
+                DataRow row;
+                for (int i = 2; i <= rowCount; i++)
+                {
+                    row = data.datatable.NewRow();
+                    for (int j = 0; j <= colCount - 1; j++)
+                    {
+                        //cells从1开始计数
+                        if (xlRange.Cells[i, j + 1].Value2 != null)
+                        {
+                            //datatime型数据另外处理
+                            if (xlRange.Cells[i, j + 1].value is DateTime)
+                            {
+                                string strValue = xlRange.Cells[i, j + 1].Value2.ToString(); //获取得到数字值
+                                                                                             //注意数据表中含有的日期数据精确到了小时，所以表示日期应该用double，而不是表示日的int32
+                                string strDate = DateTime.FromOADate(Convert.ToDouble(strValue)).ToString("s");
+                                ////转成sql server能接受的数据格式
+                                row[data.datatable.Columns[j].ColumnName] = strDate;
+                            }
+                            //将相应列的数据导入到datatable中，注意位置的对应关系，在column中从0开始计数
+                            else
+                            {
+                                row[data.datatable.Columns[j].ColumnName] = xlRange.Cells[i, j + 1].Value2;
+                            }
+                        }
+                    }
+                    data.datatable.Rows.Add(row);
+
+                }
+
+                //在datagridview中显示数据，设置数据源之后界面会自动刷新
+                this.dataGridView1.DataSource = data.datatable;
+
+                //cleanup
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+
+                //rule of thumb for releasing com objects:
+                //  never use two dots, all COM objects must be referenced and released individually
+                //  ex: [somthing].[something].[something] is bad
+
+                //release com objects to fully kill excel process from running in the background
+                Marshal.ReleaseComObject(xlRange);
+                Marshal.ReleaseComObject(xlWorksheet);
+
+                //close and release
+                xlWorkbook.Close();
+                Marshal.ReleaseComObject(xlWorkbook);
+
+                //quit and release
+                xlApp.Quit();
+                Marshal.ReleaseComObject(xlApp);
             }
 
-            //在datagridview中显示数据，设置数据源之后界面会自动刷新
-            this.dataGridView1.DataSource = data.datatable;
-
-            //cleanup
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-
-            //rule of thumb for releasing com objects:
-            //  never use two dots, all COM objects must be referenced and released individually
-            //  ex: [somthing].[something].[something] is bad
-
-            //release com objects to fully kill excel process from running in the background
-            Marshal.ReleaseComObject(xlRange);
-            Marshal.ReleaseComObject(xlWorksheet);
-
-            //close and release
-            xlWorkbook.Close();
-            Marshal.ReleaseComObject(xlWorkbook);
-
-            //quit and release
-            xlApp.Quit();
-            Marshal.ReleaseComObject(xlApp);
+            catch
+            {
+                MessageBox.Show("导入到datatable失败！");
+            }
         }
 
         //将数据从datatable导入到SQL Server上，并且对数据库、表格、记录进行检查
