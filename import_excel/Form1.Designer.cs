@@ -74,6 +74,7 @@
             this.itd.TabIndex = 3;
             this.itd.Text = "导入到datatable";
             this.itd.UseVisualStyleBackColor = true;
+            this.itd.MouseClick += new System.Windows.Forms.MouseEventHandler(this.itdatatable);
             // 
             // its
             // 
@@ -88,10 +89,10 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(243, 276);
+            this.label2.Location = new System.Drawing.Point(201, 275);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(77, 12);
-            this.label2.TabIndex = 6;
+            this.label2.TabIndex = 5;
             this.label2.Text = "未连接数据库";
             // 
             // Form1

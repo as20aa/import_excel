@@ -18,6 +18,8 @@ namespace appdata
             //
         }
         //member variables
+        public string database;
+        public string table;
         public SqlConnection connection;
         public string path;
         public System.Data.DataTable datatable;
